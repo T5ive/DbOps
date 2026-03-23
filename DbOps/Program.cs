@@ -9,7 +9,7 @@ internal class Program
         var builder = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile("appsettings.json", optional: true, reloadOnChange: true);
-        
+
         var configuration = builder.Build();
 
         var connectionString = configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
@@ -43,7 +43,7 @@ internal class Program
                 Console.WriteLine("3. Import Database");
                 Console.WriteLine("4. Exit");
                 Console.Write("Select an option: ");
-                
+
                 var choice = Console.ReadLine();
 
                 switch (choice)
@@ -51,15 +51,19 @@ internal class Program
                     case "1":
                         await ListDatabasesAsync(dbService);
                         break;
+
                     case "2":
                         await ExportDatabaseAsync(dbService, backupService);
                         break;
+
                     case "3":
                         await ImportDatabaseAsync(restoreService, restorePath);
                         break;
+
                     case "4":
                         Console.WriteLine("Exiting...");
                         return;
+
                     default:
                         Console.WriteLine("Invalid option. Please try again.");
                         break;
@@ -78,7 +82,7 @@ internal class Program
     {
         Console.WriteLine("\nFetching databases...");
         var databases = await dbService.GetUserDatabasesAsync();
-        
+
         if (databases.Count == 0)
         {
             Console.WriteLine("No user databases found.");
@@ -108,7 +112,7 @@ internal class Program
         {
             Console.WriteLine($"{i + 1}. {databases[i]}");
         }
-        
+
         Console.Write("Enter number: ");
         if (!int.TryParse(Console.ReadLine(), out var dbIdx) || dbIdx < 1 || dbIdx > databases.Count)
         {
@@ -129,9 +133,11 @@ internal class Program
             case "1":
                 await backupService.ExportBakAsync(selectedDb);
                 break;
+
             case "2":
                 await backupService.ExportBacpacAsync(selectedDb);
                 break;
+
             default:
                 Console.WriteLine("Invalid export type.");
                 break;
@@ -146,7 +152,7 @@ internal class Program
         }
 
         var files = Directory.GetFiles(restoreDir, "*.*")
-            .Where(f => f.EndsWith(".bak", StringComparison.OrdinalIgnoreCase) || 
+            .Where(f => f.EndsWith(".bak", StringComparison.OrdinalIgnoreCase) ||
                         f.EndsWith(".bacpac", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
@@ -159,7 +165,12 @@ internal class Program
         Console.WriteLine("\nSelect a file to import:");
         for (var i = 0; i < files.Count; i++)
         {
-            Console.WriteLine($"{i + 1}. {Path.GetFileName(files[i])}");
+            var filePath = Path.GetFileName(files[i]);
+
+            var fileName = Path.GetFileNameWithoutExtension(filePath);
+            var dbName = Regex.Replace(fileName, @"_\d{4}-\d{2}-\d{2}$", "");
+
+            Console.WriteLine($"{i + 1}. {filePath} ({dbName})");
         }
 
         Console.Write("Enter number: ");
@@ -177,9 +188,11 @@ internal class Program
             case ".bak":
                 await restoreService.RestoreBakAsync(selectedFile);
                 break;
+
             case ".bacpac":
                 await restoreService.RestoreBacpacAsync(selectedFile);
                 break;
+
             default:
                 Console.WriteLine("Unsupported file type.");
                 break;
