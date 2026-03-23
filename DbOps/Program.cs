@@ -1,15 +1,8 @@
-using System;
-using System.IO;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Configuration;
-using DbOps.Services;
+﻿namespace DbOps;
 
-namespace DbOps;
-
-class Program
+internal class Program
 {
-    static async Task Main(string[] args)
+    private static async Task Main(string[] args)
     {
         Console.WriteLine("=== DbOps Console Application ===");
 
@@ -19,7 +12,7 @@ class Program
         
         var configuration = builder.Build();
 
-        string connectionString = configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
+        var connectionString = configuration.GetConnectionString("DefaultConnection") ?? string.Empty;
 
         if (string.IsNullOrWhiteSpace(connectionString))
         {
@@ -33,8 +26,8 @@ class Program
             return;
         }
 
-        string backupPath = configuration.GetSection("DbOps")["BackupPath"] ?? "./backup";
-        string restorePath = configuration.GetSection("DbOps")["RestorePath"] ?? "./restore";
+        var backupPath = configuration.GetSection("DbOps")["BackupPath"] ?? "./backup";
+        var restorePath = configuration.GetSection("DbOps")["RestorePath"] ?? "./restore";
 
         var dbService = new DatabaseService(connectionString);
         var backupService = new BackupService(connectionString, backupPath);
@@ -51,7 +44,7 @@ class Program
                 Console.WriteLine("4. Exit");
                 Console.Write("Select an option: ");
                 
-                string? choice = Console.ReadLine();
+                var choice = Console.ReadLine();
 
                 switch (choice)
                 {
@@ -81,12 +74,12 @@ class Program
         }
     }
 
-    static async Task ListDatabasesAsync(DatabaseService dbService)
+    private static async Task ListDatabasesAsync(DatabaseService dbService)
     {
         Console.WriteLine("\nFetching databases...");
         var databases = await dbService.GetUserDatabasesAsync();
         
-        if (!databases.Any())
+        if (databases.Count == 0)
         {
             Console.WriteLine("No user databases found.");
             return;
@@ -99,53 +92,53 @@ class Program
         }
     }
 
-    static async Task ExportDatabaseAsync(DatabaseService dbService, BackupService backupService)
+    private static async Task ExportDatabaseAsync(DatabaseService dbService, BackupService backupService)
     {
         Console.WriteLine("\nFetching databases for export...");
         var databases = await dbService.GetUserDatabasesAsync();
-        
-        if (!databases.Any())
+
+        if (databases.Count == 0)
         {
             Console.WriteLine("No databases available to export.");
             return;
         }
 
         Console.WriteLine("Select a database to export:");
-        for (int i = 0; i < databases.Count; i++)
+        for (var i = 0; i < databases.Count; i++)
         {
             Console.WriteLine($"{i + 1}. {databases[i]}");
         }
         
         Console.Write("Enter number: ");
-        if (!int.TryParse(Console.ReadLine(), out int dbIdx) || dbIdx < 1 || dbIdx > databases.Count)
+        if (!int.TryParse(Console.ReadLine(), out var dbIdx) || dbIdx < 1 || dbIdx > databases.Count)
         {
             Console.WriteLine("Invalid selection.");
             return;
         }
 
-        string selectedDb = databases[dbIdx - 1];
+        var selectedDb = databases[dbIdx - 1];
 
         Console.WriteLine("Choose export type:");
         Console.WriteLine("1. bak");
         Console.WriteLine("2. bacpac");
         Console.Write("Enter option: ");
-        string? typeChoice = Console.ReadLine();
+        var typeChoice = Console.ReadLine();
 
-        if (typeChoice == "1")
+        switch (typeChoice)
         {
-            await backupService.ExportBakAsync(selectedDb);
-        }
-        else if (typeChoice == "2")
-        {
-            await backupService.ExportBacpacAsync(selectedDb);
-        }
-        else
-        {
-            Console.WriteLine("Invalid export type.");
+            case "1":
+                await backupService.ExportBakAsync(selectedDb);
+                break;
+            case "2":
+                await backupService.ExportBacpacAsync(selectedDb);
+                break;
+            default:
+                Console.WriteLine("Invalid export type.");
+                break;
         }
     }
 
-    static async Task ImportDatabaseAsync(RestoreService restoreService, string restoreDir)
+    private static async Task ImportDatabaseAsync(RestoreService restoreService, string restoreDir)
     {
         if (!Directory.Exists(restoreDir))
         {
@@ -157,39 +150,39 @@ class Program
                         f.EndsWith(".bacpac", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
-        if (!files.Any())
+        if (files.Count == 0)
         {
             Console.WriteLine($"No .bak or .bacpac files found in {Path.GetFullPath(restoreDir)}.");
             return;
         }
 
         Console.WriteLine("\nSelect a file to import:");
-        for (int i = 0; i < files.Count; i++)
+        for (var i = 0; i < files.Count; i++)
         {
             Console.WriteLine($"{i + 1}. {Path.GetFileName(files[i])}");
         }
 
         Console.Write("Enter number: ");
-        if (!int.TryParse(Console.ReadLine(), out int fileIdx) || fileIdx < 1 || fileIdx > files.Count)
+        if (!int.TryParse(Console.ReadLine(), out var fileIdx) || fileIdx < 1 || fileIdx > files.Count)
         {
             Console.WriteLine("Invalid selection.");
             return;
         }
 
-        string selectedFile = files[fileIdx - 1];
-        string extension = Path.GetExtension(selectedFile).ToLowerInvariant();
+        var selectedFile = files[fileIdx - 1];
+        var extension = Path.GetExtension(selectedFile).ToLowerInvariant();
 
-        if (extension == ".bak")
+        switch (extension)
         {
-            await restoreService.RestoreBakAsync(selectedFile);
-        }
-        else if (extension == ".bacpac")
-        {
-            await restoreService.RestoreBacpacAsync(selectedFile);
-        }
-        else
-        {
-            Console.WriteLine("Unsupported file type.");
+            case ".bak":
+                await restoreService.RestoreBakAsync(selectedFile);
+                break;
+            case ".bacpac":
+                await restoreService.RestoreBacpacAsync(selectedFile);
+                break;
+            default:
+                Console.WriteLine("Unsupported file type.");
+                break;
         }
     }
 }

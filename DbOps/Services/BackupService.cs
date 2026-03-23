@@ -1,10 +1,4 @@
-using System;
-using System.IO;
-using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
-using Microsoft.SqlServer.Dac;
-
-namespace DbOps.Services;
+﻿namespace DbOps.Services;
 
 public class BackupService
 {
@@ -23,8 +17,8 @@ public class BackupService
 
     public async Task ExportBakAsync(string dbName)
     {
-        string fileName = $"{dbName}_{DateTime.Now:yyyy-MM-dd}.bak";
-        string filePath = Path.Combine(_backupDir, fileName);
+        var fileName = $"{dbName}_{DateTime.Now:yyyy-MM-dd}.bak";
+        var filePath = Path.Combine(_backupDir, fileName);
 
         var builder = new SqlConnectionStringBuilder(_connectionString)
         {
@@ -35,10 +29,10 @@ public class BackupService
 
         var query = $"BACKUP DATABASE [{dbName}] TO DISK = @Path WITH INIT, FORMAT";
 
-        using var connection = new SqlConnection(builder.ConnectionString);
+        await using var connection = new SqlConnection(builder.ConnectionString);
         await connection.OpenAsync();
 
-        using var command = new SqlCommand(query, connection);
+        await using var command = new SqlCommand(query, connection);
         command.Parameters.AddWithValue("@Path", Path.GetFullPath(filePath));
 
         await command.ExecuteNonQueryAsync();
@@ -48,8 +42,8 @@ public class BackupService
 
     public async Task ExportBacpacAsync(string dbName)
     {
-        string fileName = $"{dbName}_{DateTime.Now:yyyy-MM-dd}.bacpac";
-        string filePath = Path.Combine(_backupDir, fileName);
+        var fileName = $"{dbName}_{DateTime.Now:yyyy-MM-dd}.bacpac";
+        var filePath = Path.Combine(_backupDir, fileName);
 
         Console.WriteLine($"\nExporting {dbName} to {Path.GetFullPath(filePath)} as .bacpac...");
 

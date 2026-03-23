@@ -1,41 +1,29 @@
-using System;
-using System.Collections.Generic;
-using System.Data;
-using System.Threading.Tasks;
-using Microsoft.Data.SqlClient;
+﻿namespace DbOps.Services;
 
-namespace DbOps.Services;
-
-public class DatabaseService
+public class DatabaseService(string connectionString)
 {
-    private readonly string _connectionString;
-
-    public DatabaseService(string connectionString)
-    {
-        _connectionString = connectionString;
-    }
-
     public async Task<List<string>> GetUserDatabasesAsync()
     {
         var databases = new List<string>();
         // Exclude system databases.
-        var query = @"
-            SELECT name 
-            FROM sys.databases 
-            WHERE name NOT IN ('master', 'tempdb', 'model', 'msdb')
-            ORDER BY name";
+        const string query = """
+                             SELECT name 
+                             FROM sys.databases 
+                             WHERE name NOT IN ('master', 'tempdb', 'model', 'msdb')
+                             ORDER BY name
+                             """;
 
         // Ensuring we connect to master to query sys.databases
-        var builder = new SqlConnectionStringBuilder(_connectionString)
+        var builder = new SqlConnectionStringBuilder(connectionString)
         {
             InitialCatalog = "master"
         };
 
-        using var connection = new SqlConnection(builder.ConnectionString);
+        await using var connection = new SqlConnection(builder.ConnectionString);
         await connection.OpenAsync();
-        
-        using var command = new SqlCommand(query, connection);
-        using var reader = await command.ExecuteReaderAsync();
+
+        await using var command = new SqlCommand(query, connection);
+        await using var reader = await command.ExecuteReaderAsync();
         
         while (await reader.ReadAsync())
         {
