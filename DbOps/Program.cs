@@ -121,27 +121,7 @@ internal class Program
         }
 
         var selectedDb = databases[dbIdx - 1];
-
-        Console.WriteLine("Choose export type:");
-        Console.WriteLine("1. bak");
-        Console.WriteLine("2. bacpac");
-        Console.Write("Enter option: ");
-        var typeChoice = Console.ReadLine();
-
-        switch (typeChoice)
-        {
-            case "1":
-                await backupService.ExportBakAsync(selectedDb);
-                break;
-
-            case "2":
-                await backupService.ExportBacpacAsync(selectedDb);
-                break;
-
-            default:
-                Console.WriteLine("Invalid export type.");
-                break;
-        }
+        await backupService.ExportBacpacAsync(selectedDb);
     }
 
     private static async Task ImportDatabaseAsync(RestoreService restoreService, string restoreDir)
@@ -181,21 +161,6 @@ internal class Program
         }
 
         var selectedFile = files[fileIdx - 1];
-        var extension = Path.GetExtension(selectedFile).ToLowerInvariant();
-
-        switch (extension)
-        {
-            case ".bak":
-                await restoreService.RestoreBakAsync(selectedFile);
-                break;
-
-            case ".bacpac":
-                await restoreService.RestoreBacpacAsync(selectedFile);
-                break;
-
-            default:
-                Console.WriteLine("Unsupported file type.");
-                break;
-        }
+        await restoreService.RestoreBacpacAsync(selectedFile);
     }
 }

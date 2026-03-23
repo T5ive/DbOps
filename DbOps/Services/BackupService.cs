@@ -15,31 +15,6 @@ public class BackupService
         }
     }
 
-    public async Task ExportBakAsync(string dbName)
-    {
-        var fileName = $"{dbName}_{DateTime.Now:yyyy-MM-dd}.bak";
-        var filePath = Path.Combine(_backupDir, fileName);
-
-        var builder = new SqlConnectionStringBuilder(_connectionString)
-        {
-            InitialCatalog = "master"
-        };
-
-        Console.WriteLine($"\nExporting {dbName} to {Path.GetFullPath(filePath)} as .bak...");
-
-        var query = $"BACKUP DATABASE [{dbName}] TO DISK = @Path WITH INIT, FORMAT";
-
-        await using var connection = new SqlConnection(builder.ConnectionString);
-        await connection.OpenAsync();
-
-        await using var command = new SqlCommand(query, connection);
-        command.Parameters.AddWithValue("@Path", Path.GetFullPath(filePath));
-
-        await command.ExecuteNonQueryAsync();
-
-        Console.WriteLine($"Successfully backed up {dbName} to .bak");
-    }
-
     public async Task ExportBacpacAsync(string dbName)
     {
         var fileName = $"{dbName}_{DateTime.Now:yyyy-MM-dd}.bacpac";
